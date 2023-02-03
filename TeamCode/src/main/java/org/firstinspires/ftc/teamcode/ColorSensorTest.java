@@ -16,6 +16,16 @@ public class ColorSensorTest extends LinearOpMode {
 
         while (opModeIsActive()) {
 
+            if (Robot.outsideLeft.red()>=80){
+                gamepad1.rumble(10);
+                sleep(1000)
+            }
+            if (Robot.outsideLeft.red()>=80 && gamepad1.left_bumper){
+                Robot.frontRight.setPower(0.5);
+                Robot.frontLeft.setPower(-0.5);
+                Robot.backLeft.setPower(-0.5);
+                Robot.backRight.setPower(0.5);
+            }
             telemetry.addData("Mid Left", Robot.midLeft.red());
             telemetry.addData("Mid Right", Robot.midRight.red());
 

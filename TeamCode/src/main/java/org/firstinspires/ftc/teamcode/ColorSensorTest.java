@@ -26,9 +26,15 @@ public class ColorSensorTest extends LinearOpMode {
 
         waitForStart();
 
-        Gamepad.RumbleEffect customRumbleEffect;
-        customRumbleEffect = new Gamepad.RumbleEffect.Builder()
-                .addStep(1.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+        Gamepad.RumbleEffect rumbleLeft;
+       rumbleLeft = new Gamepad.RumbleEffect.Builder()
+                .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+
+                .build();
+
+        Gamepad.RumbleEffect rumbleRight;
+        rumbleRight = new Gamepad.RumbleEffect.Builder()
+                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
 
                 .build();
 
@@ -36,14 +42,19 @@ public class ColorSensorTest extends LinearOpMode {
 
             if (Robot.outsideLeft.red()>=80){
 
-                gamepad1.runRumbleEffect(customRumbleEffect);
+                gamepad1.runRumbleEffect(rumbleLeft);
+
+            }
+            if (Robot.outsideRight.red()>=80){
+
+                gamepad1.runRumbleEffect(rumbleRight);
 
             }
 
-            if (gamepad1.left_bumper) {
+            if (Robot.outsideLeft.red()>= 30 && gamepad1.left_bumper) {
                 Turn(90);
             }
-            if (gamepad1.right_bumper) {
+            if (Robot.outsideRight.red() >= 30 && gamepad1.right_bumper) {
                 Turn(-90);
             }
 

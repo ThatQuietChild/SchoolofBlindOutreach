@@ -25,7 +25,7 @@ public class ColorSensorTest extends LinearOpMode {
         initIMU();
 
         waitForStart();
-
+        double slowfactor = 0.5;
         Gamepad.RumbleEffect rumbleLeft;
        rumbleLeft = new Gamepad.RumbleEffect.Builder()
                 .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
@@ -40,6 +40,45 @@ public class ColorSensorTest extends LinearOpMode {
 
         while (opModeIsActive()) {
 
+            double leftStickY = gamepad1.left_stick_y * -1;
+            double leftStickX = gamepad1.left_stick_x;
+            double rightStickX = gamepad1.right_stick_x;
+
+            double wheelPower;
+            double stickAngleRadians;
+            double rightX;
+            double lfPower;
+            double rfPower;
+            double lrPower;
+            double rrPower;
+
+
+            wheelPower = Math.hypot(leftStickX, leftStickY);
+            if (wheelPower > .02) {
+                wheelPower = (.8 * wheelPower + .2) * slowfactor;
+            }
+
+
+            stickAngleRadians = Math.atan2(leftStickY, leftStickX);
+
+            stickAngleRadians = stickAngleRadians - Math.PI / 4; //adjust by 45 degrees
+
+            double sinAngleRadians = Math.sin(stickAngleRadians);
+            double cosAngleRadians = Math.cos(stickAngleRadians);
+            double factor = 1 / Math.max(Math.abs(sinAngleRadians), Math.abs(cosAngleRadians));
+
+            rightX = rightStickX * slowfactor * .8;
+
+            lfPower = wheelPower * cosAngleRadians * factor + rightX;
+            rfPower = wheelPower * sinAngleRadians * factor - rightX;
+            lrPower = wheelPower * sinAngleRadians * factor + rightX;
+            rrPower = wheelPower * cosAngleRadians * factor - rightX;
+
+            robot.backLeft.setPower(lrPower);
+            robot.backRight.setPower(rrPower);
+            robot.frontLeft.setPower(lfPower);
+            robot.frontRight.setPower(rfPower);
+            align(100, 100);
             if (Robot.outsideLeft.red()>=80){
 
                 gamepad1.runRumbleEffect(rumbleLeft);
@@ -59,15 +98,19 @@ public class ColorSensorTest extends LinearOpMode {
             }
 
 
+            //telemetry.addData("RL Servo: ", tapeMeasureRLServoPosition);
+            //telemetry.addData("UD Servo: ", tapeMeasureUDServoPosition);
+            telemetry.addData("LeftStickX", gamepad1.left_stick_x);
+            telemetry.addData("LeftStickY", gamepad1.left_stick_y);
+            telemetry.addData("RightStickX", gamepad1.right_stick_x);
+            telemetry.addData("RightStickY", gamepad1.right_stick_y);
             telemetry.addData("Mid Left", Robot.midLeft.red());
             telemetry.addData("Mid Right", Robot.midRight.red());
-
             telemetry.addData("Out Left", Robot.outsideLeft.red());
             telemetry.addData("Out Right", Robot.outsideRight.red());
             angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
             telemetry.addData("Current angle", angles.firstAngle);
             telemetry.update();
-
         }
     }
 
@@ -118,5 +161,42 @@ public class ColorSensorTest extends LinearOpMode {
         Robot.backLeft.setPower(0);
 
         initIMU();
+    }
+
+    public void align(double targetColorLeft, double targetColorRight){
+        double midLeft = Robot.midLeft.red();
+        double midRight = Robot.midRight.red();
+        while(true){
+            if (midLeft < targetColorLeft){
+                Robot.frontRight.setPower(0.1);
+                Robot.backRight.setPower(0.1);
+            }
+            else if(midRight < targetColorRight){
+                Robot.frontLeft.setPower(0.1);
+                Robot.backLeft.setPower(0.1);
+            }
+            else if (midLeft > targetColorLeft){
+                Robot.frontLeft.setPower(0.1);
+                Robot.backLeft.setPower(0.1);
+            }
+            else if (midRight > targetColorRight){
+                Robot.frontRight.setPower(0.1);
+                Robot.backRight.setPower(0.1);
+            }
+            else {
+                Robot.frontRight.setPower(0);
+                Robot.backRight.setPower(0);
+                Robot.frontLeft.setPower(0);
+                Robot.backLeft.setPower(0);
+            }
+
+            if (midLeft + 3 > targetColorLeft && midLeft - 3 < targetColorLeft) {
+                break;
+            }
+            if (midRight + 3 > targetColorRight && midRight - 3 < targetColorRight) {
+                break;
+            }
+
+        }
     }
 }

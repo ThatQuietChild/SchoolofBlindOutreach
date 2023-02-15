@@ -5,12 +5,15 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+
+import java.awt.font.NumericShaper;
 
 @TeleOp(name = "color sensor test")
 
@@ -78,7 +81,21 @@ public class ColorSensorTest extends LinearOpMode {
             robot.backRight.setPower(rrPower);
             robot.frontLeft.setPower(lfPower);
             robot.frontRight.setPower(rfPower);
-            align(100, 100);
+
+            /**if(Robot.midLeft.red() != Range.clip(167, 157, 177)) {
+
+                align(167, 134);
+            }
+            else if(Robot.midRight.red() != Range.clip(134, 124, 144)){
+                align(167, 134);
+            }
+            else{
+                break;
+            }**/
+
+
+
+
             if (Robot.outsideLeft.red()>=80){
 
                 gamepad1.runRumbleEffect(rumbleLeft);
@@ -96,7 +113,6 @@ public class ColorSensorTest extends LinearOpMode {
             if (Robot.outsideRight.red() >= 30 && gamepad1.right_bumper) {
                 Turn(-90);
             }
-
 
             //telemetry.addData("RL Servo: ", tapeMeasureRLServoPosition);
             //telemetry.addData("UD Servo: ", tapeMeasureUDServoPosition);
@@ -129,6 +145,7 @@ public class ColorSensorTest extends LinearOpMode {
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
     }
+
     public void Turn(double targetDegrees) {
         angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         double currentAngle = angles.firstAngle;
@@ -163,40 +180,48 @@ public class ColorSensorTest extends LinearOpMode {
         initIMU();
     }
 
-    public void align(double targetColorLeft, double targetColorRight){
+    /**public void align(double targetColorLeft, double targetColorRight){
         double midLeft = Robot.midLeft.red();
         double midRight = Robot.midRight.red();
-        while(true){
-            if (midLeft < targetColorLeft){
-                Robot.frontRight.setPower(0.1);
-                Robot.backRight.setPower(0.1);
-            }
-            else if(midRight < targetColorRight){
-                Robot.frontLeft.setPower(0.1);
-                Robot.backLeft.setPower(0.1);
-            }
-            else if (midLeft > targetColorLeft){
-                Robot.frontLeft.setPower(0.1);
-                Robot.backLeft.setPower(0.1);
-            }
-            else if (midRight > targetColorRight){
-                Robot.frontRight.setPower(0.1);
-                Robot.backRight.setPower(0.1);
-            }
-            else {
+        while(true) {
+            if (midLeft < targetColorLeft) {
+                Robot.frontRight.setPower(0.2);
+                Robot.backRight.setPower(0.2);
+                Robot.frontLeft.setPower(0.2);
+                Robot.backLeft.setPower(0.2);
+            } else if (midRight < targetColorRight) {
+                Robot.frontLeft.setPower(0.2);
+                Robot.backLeft.setPower(-0.2);
+                Robot.frontRight.setPower(-0.2);
+                Robot.backRight.setPower(0.2);
+            } else if (midLeft > targetColorLeft) {
+                Robot.frontLeft.setPower(0.2);
+                Robot.backLeft.setPower(-0.2);
+                Robot.frontRight.setPower(-0.2);
+                Robot.backRight.setPower(0.2);
+            } else if (midRight > targetColorRight) {
+                Robot.frontRight.setPower(0.2);
+                Robot.backRight.setPower(0.2);
+                Robot.frontLeft.setPower(0.2);
+                Robot.backLeft.setPower(0.2);
+            } else {
                 Robot.frontRight.setPower(0);
                 Robot.backRight.setPower(0);
                 Robot.frontLeft.setPower(0);
                 Robot.backLeft.setPower(0);
             }
 
-            if (midLeft + 3 > targetColorLeft && midLeft - 3 < targetColorLeft) {
+            if (midLeft + 10 > targetColorLeft && midLeft - 10< targetColorLeft) {
                 break;
             }
-            if (midRight + 3 > targetColorRight && midRight - 3 < targetColorRight) {
+            if (midRight + 10 > targetColorRight && midRight - 10 < targetColorRight) {
                 break;
             }
 
-        }
+        }**/
+
+
+
     }
-}
+
+

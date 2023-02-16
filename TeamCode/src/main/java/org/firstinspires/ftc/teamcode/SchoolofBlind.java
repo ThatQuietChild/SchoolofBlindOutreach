@@ -81,15 +81,17 @@ public class SchoolofBlind extends LinearOpMode {
                 }
             }
 
-            double adjustment = headingAdjustment(currentHeading);
+            double headingAdjustPower = 0;
+            double colorAdjustPower = 0;
+            if (wheelPower != 0) {
+                colorAdjustPower = adjustForColor();
+                headingAdjustPower = headingAdjustment(currentHeading);
+            }
 
-            double adjustForColorVariable = adjustForColor();
-
-            frontLeftPower = wheelPower - adjustment + adjustForColorVariable;
-            backLeftPower = wheelPower - adjustment - adjustForColorVariable;
-
-            fontRightPower = wheelPower + adjustment - adjustForColorVariable;
-            backRightPower = wheelPower + adjustment + adjustForColorVariable;
+            frontLeftPower = wheelPower - headingAdjustPower + colorAdjustPower;
+            backLeftPower = wheelPower - headingAdjustPower - colorAdjustPower;
+            fontRightPower = wheelPower + headingAdjustPower - colorAdjustPower;
+            backRightPower = wheelPower + headingAdjustPower + colorAdjustPower;
 
             robot.frontLeft.setPower(frontLeftPower);
             robot.backLeft.setPower(backLeftPower);

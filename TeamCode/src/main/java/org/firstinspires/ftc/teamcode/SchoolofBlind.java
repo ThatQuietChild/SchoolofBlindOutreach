@@ -44,21 +44,19 @@ public class SchoolofBlind extends LinearOpMode {
             boolean pressingLeftTurn = gamepad1.dpad_left;
 
             double wheelPower;
-            double lfPower;
-            double rfPower;
-            double lrPower;
-            double rrPower;
+            double frontLeftPower;
+            double backLeftPower;
+            double fontRightPower;
+            double backRightPower;
 
             // right turn
             if (pressingRightTurn && rightTurnAvailable()) {
-                currentHeading = (360 + currentHeading - 90) % 360;
-                turnToHeading(currentHeading);
+                currentHeading = turn(currentHeading, true);
             }
 
             // left turn
             if (pressingLeftTurn && leftTurnAvailable()) {
-                currentHeading = (currentHeading + 90) % 360;
-                turnToHeading(currentHeading);
+                currentHeading = turn(currentHeading, false);
             }
 
             // signal right available
@@ -87,26 +85,20 @@ public class SchoolofBlind extends LinearOpMode {
 
             double adjustForColorVariable = adjustForColor();
 
-            lfPower = wheelPower - adjustment + adjustForColorVariable;
-            lrPower = wheelPower - adjustment - adjustForColorVariable;
+            frontLeftPower = wheelPower - adjustment + adjustForColorVariable;
+            backLeftPower = wheelPower - adjustment - adjustForColorVariable;
 
-            rfPower = wheelPower + adjustment - adjustForColorVariable;
-            rrPower = wheelPower + adjustment + adjustForColorVariable;
+            fontRightPower = wheelPower + adjustment - adjustForColorVariable;
+            backRightPower = wheelPower + adjustment + adjustForColorVariable;
 
-            robot.backLeft.setPower(lrPower);
-            robot.backRight.setPower(rrPower);
-            robot.frontLeft.setPower(lfPower);
-            robot.frontRight.setPower(rfPower);
+            robot.frontLeft.setPower(frontLeftPower);
+            robot.backLeft.setPower(backLeftPower);
+            robot.frontRight.setPower(fontRightPower);
+            robot.backRight.setPower(backRightPower);
 
-            //telemetry.addData("RL Servo: ", tapeMeasureRLServoPosition);
-            //telemetry.addData("UD Servo: ", tapeMeasureUDServoPosition);
-            telemetry.addData("LeftStickX", gamepad1.left_stick_x);
-            telemetry.addData("LeftStickY", gamepad1.left_stick_y);
-            telemetry.addData("RightStickX", gamepad1.right_stick_x);
-            telemetry.addData("RightStickY", gamepad1.right_stick_y);
-            telemetry.addData("outside left", Robot.outsideLeft.red());
             telemetry.addData("mid left", Robot.midLeft.red());
             telemetry.addData("mid right", Robot.midRight.red());
+            telemetry.addData("outside left", Robot.outsideLeft.red());
             telemetry.addData("outside right", Robot.outsideRight.red());
 
             telemetry.update();
@@ -126,6 +118,62 @@ public class SchoolofBlind extends LinearOpMode {
         // and named "imu".
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
+    }
+    public double turn(double prevHeading, boolean turnRight) {
+
+        double turnPower = .25;
+        double turnReverse = 1;
+
+        double targetHeading = prevHeading;
+        if (turnRight) {
+            targetHeading = targetHeading + 90;
+        } else {
+            targetHeading = targetHeading - 90;
+        }
+        targetHeading = (360 + targetHeading) % 360;
+        
+        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double currentHeading = (360 + angles.firstAngle) % 360;
+        boolean goRight = targetHeading > currentHeading;
+        double degreesOff = Math.abs(targetHeading - currentHeading);
+
+        if (degreesOff > 180) {
+            goRight = !goRight;
+            degreesOff = 360 - degreesOff;
+        }
+        
+        while (degreesOff > .3) {
+
+            if (goRight) {
+                turnReverse = 1; // turn right
+            } else {
+                turnReverse = -1; // turn left
+            }
+
+            Robot.frontLeft.setPower(turnPower * turnReverse);
+            Robot.backLeft.setPower(turnPower * turnReverse);
+            Robot.frontRight.setPower(-turnPower * turnReverse);
+            Robot.backRight.setPower(-turnPower * turnReverse);
+
+
+            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            currentHeading = (360 + angles.firstAngle) % 360;
+            goRight = targetHeading > currentHeading;
+            degreesOff = Math.abs(targetHeading - currentHeading);
+
+            if (degreesOff > 180) {
+                goRight = !goRight;
+                degreesOff = 360 - degreesOff;
+            }
+        }
+
+        Robot.frontLeft.setPower(0);
+        Robot.backLeft.setPower(0);
+        Robot.frontRight.setPower(0);
+        Robot.backRight.setPower(0);
+
+
+        return targetHeading;
     }
 
     public void turnToHeading(double targetDegrees) {
@@ -148,11 +196,11 @@ public class SchoolofBlind extends LinearOpMode {
                 turnReverse = -1;
             }
 
-            Robot.frontRight.setPower(-turnPower * turnReverse);
-            Robot.backRight.setPower(-turnPower * turnReverse);
             Robot.frontLeft.setPower(turnPower * turnReverse);
             Robot.backLeft.setPower(turnPower * turnReverse);
-
+            Robot.frontRight.setPower(-turnPower * turnReverse);
+            Robot.backRight.setPower(-turnPower * turnReverse);
+            
             angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
             currentHeading = (360 + angles.firstAngle) % 360;
             degreesOff = targetDegrees - currentHeading;
@@ -160,10 +208,10 @@ public class SchoolofBlind extends LinearOpMode {
             telemetry.update();
         }
 
-        Robot.frontRight.setPower(0);
-        Robot.backRight.setPower(0);
         Robot.frontLeft.setPower(0);
         Robot.backLeft.setPower(0);
+        Robot.frontRight.setPower(0);
+        Robot.backRight.setPower(0);
 
     }
 

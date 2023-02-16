@@ -51,13 +51,13 @@ public class SchoolofBlind extends LinearOpMode {
 
             // right turn
             if (pressingRightTurn && rightTurnAvailable()) {
-                currentHeading = (currentHeading + 90) % 360;
+                currentHeading = (360 + currentHeading - 90) % 360;
                 turnToHeading(currentHeading);
             }
 
             // left turn
             if (pressingLeftTurn && leftTurnAvailable()) {
-                currentHeading = (360 + currentHeading - 90) % 360;
+                currentHeading = (currentHeading + 90) % 360;
                 turnToHeading(currentHeading);
             }
 
@@ -104,6 +104,11 @@ public class SchoolofBlind extends LinearOpMode {
             telemetry.addData("LeftStickY", gamepad1.left_stick_y);
             telemetry.addData("RightStickX", gamepad1.right_stick_x);
             telemetry.addData("RightStickY", gamepad1.right_stick_y);
+            telemetry.addData("outside left", Robot.outsideLeft.red());
+            telemetry.addData("mid left", Robot.midLeft.red());
+            telemetry.addData("mid right", Robot.midRight.red());
+            telemetry.addData("outside right", Robot.outsideRight.red());
+
             telemetry.update();
         }
     }
@@ -131,6 +136,9 @@ public class SchoolofBlind extends LinearOpMode {
         double currentHeading = (360 + angles.firstAngle) % 360;
 
         double degreesOff = targetDegrees - currentHeading;
+        if(degreesOff > 180){
+            degreesOff = 360 - degreesOff;
+        }
 
         while (Math.abs(degreesOff) > .3) {
 
@@ -148,6 +156,8 @@ public class SchoolofBlind extends LinearOpMode {
             angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
             currentHeading = (360 + angles.firstAngle) % 360;
             degreesOff = targetDegrees - currentHeading;
+            telemetry.addData("Target Degrees", targetDegrees);
+            telemetry.update();
         }
 
         Robot.frontRight.setPower(0);
@@ -192,13 +202,13 @@ public class SchoolofBlind extends LinearOpMode {
         double leftColor;
         double rightColor;
 
-        double redThreshold = 40;
+        double redThreshold = 60;
         double redDivisor = 2500;
 
         double outputValue = 0;
 
-        leftColor = Robot.outsideLeft.red();
-        rightColor = Robot.outsideRight.red();
+        leftColor = Robot.midLeft.red();
+        rightColor = Robot.midRight.red();
 
         if (leftColor > redThreshold || rightColor > redThreshold) {
             outputValue = (rightColor - leftColor) / redDivisor;
@@ -208,10 +218,20 @@ public class SchoolofBlind extends LinearOpMode {
     }
 
     public boolean rightTurnAvailable() {
-        return false;
+        if(Robot.outsideRight.red() >= 90){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
     public boolean leftTurnAvailable () {
-        return false;
+        if(Robot.outsideLeft.red() >= 105){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
     public void signalRightTurn() {

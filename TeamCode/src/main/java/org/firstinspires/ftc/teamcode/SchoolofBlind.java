@@ -5,6 +5,7 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -32,6 +33,16 @@ public class SchoolofBlind extends LinearOpMode {
         initIMU();
 
         waitForStart();
+        Gamepad.RumbleEffect rumbleLeft;
+        rumbleLeft = new Gamepad.RumbleEffect.Builder()
+                .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+
+                .build();
+        Gamepad.RumbleEffect rumbleRight;
+        rumbleRight = new Gamepad.RumbleEffect.Builder()
+                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+
+                .build();
         double defaultWheelPower = .25;
         double currentHeading = 0;
 
@@ -76,7 +87,7 @@ public class SchoolofBlind extends LinearOpMode {
             
             // Driving code
             
-            if (pressingForward) {
+            if (pressingForward && forwardAvailable()) {
                 wheelPower = defaultWheelPower;
             } else {
                 if (pressingReverse) {
@@ -147,9 +158,9 @@ public class SchoolofBlind extends LinearOpMode {
         double targetHeading;
 
         if (turnRight) {
-            targetHeading = prevHeading + 90;
-        } else {
             targetHeading = prevHeading - 90;
+        } else {
+            targetHeading = prevHeading + 90;
         }
         targetHeading = (360 + targetHeading) % 360;
         
@@ -221,28 +232,39 @@ public class SchoolofBlind extends LinearOpMode {
 
         return outputValue;
     }
-
-    public boolean rightTurnAvailable() {
-        if(Robot.outsideRight.red() >= 90){
-            return true;
-        }
-        else{
+    public boolean forwardAvailable(){
+        if(Robot.midLeft.red() < 50 || Robot.midRight.red() < 50){
             return false;
+        }
+        else {
+            return true;
         }
     }
+    public boolean rightTurnAvailable() {
+        return Robot.outsideRight.red() >= 90;
+
+    }
     public boolean leftTurnAvailable () {
-        if(Robot.outsideLeft.red() >= 90){
-            return true;
-        }
-        else{
-            return false;
-        }
+        return Robot.outsideLeft.red() >= 90;
+
     }
 
     public void signalRightTurn() {
         telemetry.addLine("Right Turn Available");
+        Gamepad.RumbleEffect rumbleRight;
+        rumbleRight = new Gamepad.RumbleEffect.Builder()
+                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+
+                .build();
+        gamepad1.runRumbleEffect(rumbleRight);
     }
     public void signalLeftTurn() {
         telemetry.addLine("Left Turn Available");
+        Gamepad.RumbleEffect rumbleLeft;
+        rumbleLeft = new Gamepad.RumbleEffect.Builder()
+                .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+
+                .build();
+        gamepad1.runRumbleEffect(rumbleLeft);
     }
 }

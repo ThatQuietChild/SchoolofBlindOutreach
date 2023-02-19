@@ -20,6 +20,11 @@ public class SchoolofBlind extends LinearOpMode {
     BNO055IMU imu;
     Orientation angles;
 
+    // global variables for getActualHeading.  Do not define anywhere else
+    double actualHeading = 0;
+    boolean goRight;
+    double degreesOff;
+
     @Override
     public void runOpMode() {
         org.firstinspires.ftc.teamcode.Robot robot = new org.firstinspires.ftc.teamcode.Robot(hardwareMap);
@@ -102,6 +107,8 @@ public class SchoolofBlind extends LinearOpMode {
             telemetry.addData("mid right", Robot.midRight.red());
             telemetry.addData("outside left", Robot.outsideLeft.red());
             telemetry.addData("outside right", Robot.outsideRight.red());
+            telemetry.addData("currentHeading", currentHeading);
+            telemetry.addData("actualHeading", actualHeading);
 
             telemetry.update();
         }
@@ -121,29 +128,33 @@ public class SchoolofBlind extends LinearOpMode {
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
     }
-    public double turn(double prevHeading, boolean turnRight) {
 
-        double turnPower = .25;
-        double turnReverse = 1;
-
-        double targetHeading = prevHeading;
-        if (turnRight) {
-            targetHeading = targetHeading + 90;
-        } else {
-            targetHeading = targetHeading - 90;
-        }
-        targetHeading = (360 + targetHeading) % 360;
-        
+    public void getActualHeading(double targetHeading) {        // Also sets degreesOff and goRight
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        double currentHeading = (360 + angles.firstAngle) % 360;
-        boolean goRight = targetHeading > currentHeading;
-        double degreesOff = Math.abs(targetHeading - currentHeading);
-
-        if (degreesOff > 180) {
+        actualHeading = (360 + angles.firstAngle) % 360;        // This always gets you a number between 0 and 359.99
+        goRight = targetHeading > actualHeading;                // Simply, if it's a higher number, we want to go clockwise or right
+        degreesOff = Math.abs(targetHeading - actualHeading);
+        if (degreesOff > 180) {                                 // But if turning the other way is shorter, switch it
             goRight = !goRight;
             degreesOff = 360 - degreesOff;
         }
+    }
+
+    public double turn(double prevHeading, boolean turnRight) {  // Only options are to turn right +90 or left -90
+
+        double turnPower = .25;
+        double turnReverse;
+        double targetHeading;
+
+        if (turnRight) {
+            targetHeading = prevHeading + 90;
+        } else {
+            targetHeading = prevHeading - 90;
+        }
+        targetHeading = (360 + targetHeading) % 360;
         
+        getActualHeading(targetHeading);
+
         while (degreesOff > .3) {
 
             if (goRight) {
@@ -152,89 +163,33 @@ public class SchoolofBlind extends LinearOpMode {
                 turnReverse = -1; // turn left
             }
 
+            // think about using a calculation here for turnPower.
+
             Robot.frontLeft.setPower(turnPower * turnReverse);
             Robot.backLeft.setPower(turnPower * turnReverse);
             Robot.frontRight.setPower(-turnPower * turnReverse);
             Robot.backRight.setPower(-turnPower * turnReverse);
 
+            getActualHeading(targetHeading);
 
-            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-            currentHeading = (360 + angles.firstAngle) % 360;
-            goRight = targetHeading > currentHeading;
-            degreesOff = Math.abs(targetHeading - currentHeading);
-
-            if (degreesOff > 180) {
-                goRight = !goRight;
-                degreesOff = 360 - degreesOff;
-            }
         }
 
         Robot.frontLeft.setPower(0);
         Robot.backLeft.setPower(0);
         Robot.frontRight.setPower(0);
         Robot.backRight.setPower(0);
-
 
         return targetHeading;
     }
 
-    public void turnToHeading(double targetDegrees) {
-
-        double turnPower = .25;
-        double turnReverse = 1;
-        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        double currentHeading = (360 + angles.firstAngle) % 360;
-
-        double degreesOff = targetDegrees - currentHeading;
-        if(degreesOff > 180){
-            degreesOff = 360 - degreesOff;
-        }
-
-        while (Math.abs(degreesOff) > .3) {
-
-            if (currentHeading < targetDegrees) {
-                turnReverse = 1;
-            } else {
-                turnReverse = -1;
-            }
-
-            Robot.frontLeft.setPower(turnPower * turnReverse);
-            Robot.backLeft.setPower(turnPower * turnReverse);
-            Robot.frontRight.setPower(-turnPower * turnReverse);
-            Robot.backRight.setPower(-turnPower * turnReverse);
-            
-            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-            currentHeading = (360 + angles.firstAngle) % 360;
-            degreesOff = targetDegrees - currentHeading;
-            telemetry.addData("Target Degrees", targetDegrees);
-            telemetry.update();
-        }
-
-        Robot.frontLeft.setPower(0);
-        Robot.backLeft.setPower(0);
-        Robot.frontRight.setPower(0);
-        Robot.backRight.setPower(0);
-
-    }
-
     public double headingAdjustment(double targetHeading) {
         double adjustment;
-        double currentHeading;
         double speedMinimum = 2;
         double speedModifier = 8;
         double graphShift = 0;
         double curvePower = 2;
 
-        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        currentHeading = (360 + angles.firstAngle) % 360;
-
-        boolean goRight = targetHeading > currentHeading;
-        double degreesOff = Math.abs(targetHeading - currentHeading);
-        
-        if (degreesOff > 180) {
-            goRight = !goRight;
-            degreesOff = 360 - degreesOff;
-        }
+        getActualHeading(targetHeading);
 
         if (degreesOff < .3) {
             adjustment = 0;

@@ -5,6 +5,7 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -20,11 +21,6 @@ public class SchoolofBlind extends LinearOpMode {
     BNO055IMU imu;
     Orientation angles;
 
-    // global variables for getActualHeading.  Do not define anywhere else
-    double actualHeading = 0;
-    boolean goRight;
-    double degreesOff;
-
     @Override
     public void runOpMode() {
         org.firstinspires.ftc.teamcode.Robot robot = new org.firstinspires.ftc.teamcode.Robot(hardwareMap);
@@ -32,6 +28,16 @@ public class SchoolofBlind extends LinearOpMode {
         initIMU();
 
         waitForStart();
+        Gamepad.RumbleEffect rumbleLeft;
+        rumbleLeft = new Gamepad.RumbleEffect.Builder()
+                .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+
+                .build();
+        Gamepad.RumbleEffect rumbleRight;
+        rumbleRight = new Gamepad.RumbleEffect.Builder()
+                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+
+                .build();
         double defaultWheelPower = .25;
         double currentHeading = 0;
 
@@ -39,10 +45,10 @@ public class SchoolofBlind extends LinearOpMode {
 
             // Get gamepad values
             // dpad up and down are forward and backward
-            
+
             boolean pressingForward = gamepad1.dpad_up;
             boolean pressingReverse = gamepad1.dpad_down;
-            
+
             // dpad left and right are for turning 90 left/right
 
             boolean pressingRightTurn = gamepad1.dpad_right;
@@ -73,10 +79,10 @@ public class SchoolofBlind extends LinearOpMode {
             if (leftTurnAvailable()) {
                 signalLeftTurn();
             }
-            
+
             // Driving code
-            
-            if (pressingForward) {
+
+            if (pressingForward && forwardAvailable()) {
                 wheelPower = defaultWheelPower;
             } else {
                 if (pressingReverse) {
@@ -107,12 +113,11 @@ public class SchoolofBlind extends LinearOpMode {
             telemetry.addData("mid right", Robot.midRight.red());
             telemetry.addData("outside left", Robot.outsideLeft.red());
             telemetry.addData("outside right", Robot.outsideRight.red());
-            telemetry.addData("currentHeading", currentHeading);
-            telemetry.addData("actualHeading", actualHeading);
 
             telemetry.update();
         }
     }
+
     public void initIMU() {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
@@ -129,31 +134,28 @@ public class SchoolofBlind extends LinearOpMode {
         imu.initialize(parameters);
     }
 
-    public void getActualHeading(double targetHeading) {        // Also sets degreesOff and goRight
+    public double turn(double prevHeading, boolean turnRight) {
+
+        double turnPower = .25;
+        double turnReverse = 1;
+
+        double targetHeading = prevHeading;
+        if (turnRight) {
+            targetHeading = prevHeading - 90;
+        } else {
+            targetHeading = prevHeading + 90;
+        }
+        targetHeading = (360 + targetHeading) % 360;
+
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        actualHeading = (360 + angles.firstAngle) % 360;        // This always gets you a number between 0 and 359.99
-        goRight = targetHeading > actualHeading;                // Simply, if it's a higher number, we want to go clockwise or right
-        degreesOff = Math.abs(targetHeading - actualHeading);
-        if (degreesOff > 180) {                                 // But if turning the other way is shorter, switch it
+        double currentHeading = (360 + angles.firstAngle) % 360;
+        boolean goRight = targetHeading > currentHeading;
+        double degreesOff = Math.abs(targetHeading - currentHeading);
+
+        if (degreesOff > 180) {
             goRight = !goRight;
             degreesOff = 360 - degreesOff;
         }
-    }
-
-    public double turn(double prevHeading, boolean turnRight) {  // Only options are to turn right +90 or left -90
-
-        double turnPower = .25;
-        double turnReverse;
-        double targetHeading;
-
-        if (turnRight) {
-            targetHeading = prevHeading + 90;
-        } else {
-            targetHeading = prevHeading - 90;
-        }
-        targetHeading = (360 + targetHeading) % 360;
-        
-        getActualHeading(targetHeading);
 
         while (degreesOff > .3) {
 
@@ -163,15 +165,21 @@ public class SchoolofBlind extends LinearOpMode {
                 turnReverse = -1; // turn left
             }
 
-            // think about using a calculation here for turnPower.
-
             Robot.frontLeft.setPower(turnPower * turnReverse);
             Robot.backLeft.setPower(turnPower * turnReverse);
             Robot.frontRight.setPower(-turnPower * turnReverse);
             Robot.backRight.setPower(-turnPower * turnReverse);
 
-            getActualHeading(targetHeading);
 
+            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            currentHeading = (360 + angles.firstAngle) % 360;
+            goRight = targetHeading > currentHeading;
+            degreesOff = Math.abs(targetHeading - currentHeading);
+
+            if (degreesOff > 180) {
+                goRight = !goRight;
+                degreesOff = 360 - degreesOff;
+            }
         }
 
         Robot.frontLeft.setPower(0);
@@ -179,17 +187,67 @@ public class SchoolofBlind extends LinearOpMode {
         Robot.frontRight.setPower(0);
         Robot.backRight.setPower(0);
 
+
         return targetHeading;
+    }
+
+    public void turnToHeading(double targetDegrees) {
+
+        double turnPower = .25;
+        double turnReverse = 1;
+        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double currentHeading = (360 + angles.firstAngle) % 360;
+
+        double degreesOff = targetDegrees - currentHeading;
+        if (degreesOff > 180) {
+            degreesOff = 360 - degreesOff;
+        }
+
+        while (Math.abs(degreesOff) > .3) {
+
+            if (currentHeading < targetDegrees) {
+                turnReverse = 1;
+            } else {
+                turnReverse = -1;
+            }
+
+            Robot.frontLeft.setPower(turnPower * turnReverse);
+            Robot.backLeft.setPower(turnPower * turnReverse);
+            Robot.frontRight.setPower(-turnPower * turnReverse);
+            Robot.backRight.setPower(-turnPower * turnReverse);
+
+            angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            currentHeading = (360 + angles.firstAngle) % 360;
+            degreesOff = targetDegrees - currentHeading;
+            telemetry.addData("Target Degrees", targetDegrees);
+            telemetry.update();
+        }
+
+        Robot.frontLeft.setPower(0);
+        Robot.backLeft.setPower(0);
+        Robot.frontRight.setPower(0);
+        Robot.backRight.setPower(0);
+
     }
 
     public double headingAdjustment(double targetHeading) {
         double adjustment;
+        double currentHeading;
         double speedMinimum = 2;
         double speedModifier = 8;
         double graphShift = 0;
         double curvePower = 2;
 
-        getActualHeading(targetHeading);
+        angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        currentHeading = (360 + angles.firstAngle) % 360;
+
+        boolean goRight = targetHeading > currentHeading;
+        double degreesOff = Math.abs(targetHeading - currentHeading);
+
+        if (degreesOff > 180) {
+            goRight = !goRight;
+            degreesOff = 360 - degreesOff;
+        }
 
         if (degreesOff < .3) {
             adjustment = 0;
@@ -208,7 +266,7 @@ public class SchoolofBlind extends LinearOpMode {
         double rightColor;
 
         double redThreshold = 60;
-        double redDivisor = 2500;
+        double redDivisor = 1000;
 
         double outputValue = 0;
 
@@ -223,26 +281,45 @@ public class SchoolofBlind extends LinearOpMode {
     }
 
     public boolean rightTurnAvailable() {
-        if(Robot.outsideRight.red() >= 90){
+        if (Robot.outsideRight.red() >= 90) {
             return true;
-        }
-        else{
+        } else {
             return false;
         }
     }
-    public boolean leftTurnAvailable () {
-        if(Robot.outsideLeft.red() >= 105){
+
+    public boolean leftTurnAvailable() {
+        if (Robot.outsideLeft.red() >= 90) {
             return true;
-        }
-        else{
+        } else {
             return false;
+        }
+    }
+
+    public boolean forwardAvailable() {
+        if (Robot.midLeft.red() < 50 || Robot.midRight.red() < 50) {
+            return false;
+        } else {
+            return true;
         }
     }
 
     public void signalRightTurn() {
         telemetry.addLine("Right Turn Available");
+        Gamepad.RumbleEffect rumbleRight;
+        rumbleRight = new Gamepad.RumbleEffect.Builder()
+                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+
+                .build();
+        gamepad1.runRumbleEffect(rumbleRight);
     }
     public void signalLeftTurn() {
         telemetry.addLine("Left Turn Available");
+        Gamepad.RumbleEffect rumbleLeft;
+        rumbleLeft = new Gamepad.RumbleEffect.Builder()
+                .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+
+                .build();
+        gamepad1.runRumbleEffect(rumbleLeft);
     }
 }

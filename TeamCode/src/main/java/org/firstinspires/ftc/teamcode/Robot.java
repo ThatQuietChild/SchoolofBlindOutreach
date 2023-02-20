@@ -24,13 +24,15 @@ public class Robot {
     public static double deadStickZone = 0.01;
     public static double wheelPowerMinToMove = 0.05;
 
-
+    // Color Sensing
 
     public static ColorSensor midLeft;
     public static ColorSensor midRight;
 
     public static ColorSensor outsideLeft;
     public static ColorSensor outsideRight;
+
+    public static double redThreshold = 60;
 
     //---MISC---//
 

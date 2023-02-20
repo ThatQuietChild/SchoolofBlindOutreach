@@ -60,6 +60,7 @@ public class SchoolofBlind extends LinearOpMode {
             boolean pressingLeftTurn = gamepad1.dpad_left;
 
             double wheelPower;
+            boolean prevDirectionForward = false;
             double frontLeftPower;
             double backLeftPower;
             double fontRightPower;
@@ -87,13 +88,23 @@ public class SchoolofBlind extends LinearOpMode {
             
             // Driving code
             
-            if (pressingForward && forwardAvailable()) {
+            if (pressingForward && robotIsOnTheLine()) {
                 wheelPower = defaultWheelPower;
+                prevDirectionForward = true;
             } else {
-                if (pressingReverse) {
+                if (pressingReverse && robotIsOnTheLine()) {
                     wheelPower = -defaultWheelPower;
+                    prevDirectionForward = false;
                 } else {
                     wheelPower = 0;
+                }
+            }
+
+            if (!robotIsOnTheLine()) {    // special case to get it back on the line after it goes off.  Dangerous though.  Robot would drive forever until it finds red
+                if (prevDirectionForward) {
+                    wheelPower = -defaultWheelPower;
+                } else {
+                    wheelPower = defaultWheelPower;
                 }
             }
 
@@ -218,7 +229,7 @@ public class SchoolofBlind extends LinearOpMode {
         double leftColor;
         double rightColor;
 
-        double redThreshold = 60;
+
         double redDivisor = 1000;
 
         double outputValue = 0;
@@ -226,20 +237,21 @@ public class SchoolofBlind extends LinearOpMode {
         leftColor = Robot.midLeft.red();
         rightColor = Robot.midRight.red();
 
-        if (leftColor > redThreshold || rightColor > redThreshold) {
+        if (leftColor > Robot.redThreshold || rightColor > Robot.redThreshold) {
             outputValue = (rightColor - leftColor) / redDivisor;
         }
 
         return outputValue;
     }
-    public boolean forwardAvailable(){
-        if(Robot.midLeft.red() < 50 || Robot.midRight.red() < 50){
+    public boolean robotIsOnTheLine(){
+        if(Robot.midLeft.red() < Robot.redThreshold && Robot.midRight.red() < Robot.redThreshold){
             return false;
         }
         else {
             return true;
         }
     }
+
     public boolean rightTurnAvailable() {
         return Robot.outsideRight.red() >= 90;
 
@@ -258,6 +270,7 @@ public class SchoolofBlind extends LinearOpMode {
                 .build();
         gamepad1.runRumbleEffect(rumbleRight);
     }
+
     public void signalLeftTurn() {
         telemetry.addLine("Left Turn Available");
         Gamepad.RumbleEffect rumbleLeft;

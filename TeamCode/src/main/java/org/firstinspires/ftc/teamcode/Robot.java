@@ -9,23 +9,17 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 public class Robot {
 
-
-    //---DRIVING---//
     //Driving
     public static DcMotorEx backLeft;
     public static DcMotorEx backRight;
     public static DcMotorEx frontLeft;
     public static DcMotorEx frontRight;
-    public static double wheelCountsPerRevolution = 537.6;
-    public static double wheelDiameter = 3.77;
-    public static double ticksPerInch = (wheelCountsPerRevolution) /
-            (wheelDiameter * Math.PI);
 
-    public static double deadStickZone = 0.01;
-    public static double wheelPowerMinToMove = 0.05;
+    public static double wheelTicksPerRevolution = 383.6;  // for 13.7:1 gearboxes
+    public static double wheelDiameter = 3.77;
+    public static double ticksPerInch = (wheelTicksPerRevolution) / (wheelDiameter * Math.PI);
 
     // Color Sensing
-
     public static ColorSensor midLeft;
     public static ColorSensor midRight;
 
@@ -34,7 +28,6 @@ public class Robot {
 
     public static double redThreshold = 60;
 
-    //---MISC---//
 
     //Hardware Map
     public HardwareMap hardwareMap;
@@ -46,21 +39,25 @@ public class Robot {
         hardwareMap = robot_hardwareMap;
 
         //---Driving---//
-        backLeft = hardwareMap.get(DcMotorEx.class, "backLeft");
-        backRight = hardwareMap.get(DcMotorEx.class, "backRight");
         frontLeft = hardwareMap.get(DcMotorEx.class, "frontLeft");
+        backLeft = hardwareMap.get(DcMotorEx.class, "backLeft");
         frontRight = hardwareMap.get(DcMotorEx.class, "frontRight");
+        backRight = hardwareMap.get(DcMotorEx.class, "backRight");
 
+        frontLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        frontRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        backRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
-        backLeft.setDirection(DcMotor.Direction.REVERSE);
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.FORWARD);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
         frontRight.setDirection(DcMotor.Direction.FORWARD);
+        backRight.setDirection(DcMotor.Direction.FORWARD);
 
-        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //Color sensors
 
@@ -69,6 +66,5 @@ public class Robot {
 
         outsideLeft = hardwareMap.get(ColorSensor.class, "outsideLeft");
         outsideRight = hardwareMap.get(ColorSensor.class, "outsideRight");
-
     }
 }

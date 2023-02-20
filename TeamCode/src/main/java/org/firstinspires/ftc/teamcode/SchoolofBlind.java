@@ -5,6 +5,8 @@ import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -177,7 +179,7 @@ public class SchoolofBlind extends LinearOpMode {
         
         getActualHeading(targetHeading);
 
-        while (degreesOff > .3) {
+        while (degreesOff > .3 && opModeIsActive()) {
 
             if (goRight) {
                 turnReverse = 1; // turn right
@@ -279,5 +281,39 @@ public class SchoolofBlind extends LinearOpMode {
 
                 .build();
         gamepad1.runRumbleEffect(rumbleLeft);
+    }
+
+    public void drive(double speed, double inches) {
+        int ticksToMove = (int) (inches * Robot.ticksPerInch);
+        int savePosition = Robot.frontLeft.getCurrentPosition();
+        Robot.frontLeft.setTargetPosition(savePosition + ticksToMove);
+        Robot.backLeft.setTargetPosition(Robot.backLeft.getCurrentPosition() + ticksToMove);
+        Robot.frontRight.setTargetPosition(Robot.frontRight.getCurrentPosition() + ticksToMove);
+        Robot.backRight.setTargetPosition(Robot.backLeft.getCurrentPosition() + ticksToMove);
+
+        Robot.frontLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        Robot.frontRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        Robot.backRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+
+        Robot.frontLeft.setPower(speed);
+        Robot.backLeft.setPower(speed);
+        Robot.frontRight.setPower(speed);
+        Robot.backRight.setPower(speed);
+
+        while (Robot.frontLeft.isBusy() && opModeIsActive()) {
+            telemetry.addData("Inches driven", (Robot.frontLeft.getCurrentPosition() - savePosition) / Robot.ticksPerInch);
+            telemetry.update();
+        }
+
+        Robot.frontLeft.setPower(0);
+        Robot.backLeft.setPower(0);
+        Robot.frontRight.setPower(0);
+        Robot.backRight.setPower(0);
+
+        Robot.frontLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        Robot.frontRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        Robot.backRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
     }
 }

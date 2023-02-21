@@ -2,24 +2,18 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import org.firstinspires.ftc.teamcode.Robot;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-
-@TeleOp
+@TeleOp(name = "Library of Blind")
 
 public class SchoolofBlind extends LinearOpMode {
 
@@ -28,12 +22,11 @@ public class SchoolofBlind extends LinearOpMode {
 
     // global variables for getActualHeading.  Do not define anywhere else
     double actualHeading = 0;
-    boolean goRight;
+    boolean goLeft;
     double degreesOff;
 
     @Override
     public void runOpMode() {
-        org.firstinspires.ftc.teamcode.Robot robot = new org.firstinspires.ftc.teamcode.Robot(hardwareMap);
 
         initIMU();
 
@@ -48,8 +41,15 @@ public class SchoolofBlind extends LinearOpMode {
                 .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
 
                 .build();
-        double defaultWheelPower = .25;
+        double defaultWheelPower = .20;
         double currentHeading = 0;
+        double wheelPower;
+        boolean prevDirectionForward = false;
+        boolean reachedEndOfTape = true;
+        double frontLeftPower;
+        double backLeftPower;
+        double fontRightPower;
+        double backRightPower;
 
         while (opModeIsActive()) {
 
@@ -64,62 +64,68 @@ public class SchoolofBlind extends LinearOpMode {
             boolean pressingRightTurn = gamepad1.dpad_right;
             boolean pressingLeftTurn = gamepad1.dpad_left;
 
-            double wheelPower;
-            boolean prevDirectionForward = false;
-            double frontLeftPower;
-            double backLeftPower;
-            double fontRightPower;
-            double backRightPower;
-
             // right turn
-            if (pressingRightTurn && Robot.rightTurnAvailable()) {
+            if (pressingRightTurn && rightTurnAvailable()) {
                 currentHeading = turn(currentHeading, true);
-                drive(.25, 1);
             }
 
             // left turn
-            if (pressingLeftTurn && Robot.leftTurnAvailable()) {
+            if (pressingLeftTurn && leftTurnAvailable()) {
                 currentHeading = turn(currentHeading, false);
-                drive(.25, 1);
             }
 
             // signal right available
-            if (Robot.rightTurnAvailable()) {
-                Robot.signalRightTurn();
+            if (rightTurnAvailable()) {
+                signalRightTurn();  // might need to put a timer in this and only signal every second
             }
 
             // signal left available
-            if (Robot.leftTurnAvailable()) {
-                Robot.signalLeftTurn();
+            if (leftTurnAvailable()) {
+                signalLeftTurn();  // might need to put a timer in this and only signal every second
             }
             
             // Driving code
-            if(pressingForward){
-                prevDirectionForward = true;
-            }
-            if (pressingForward && robotIsOnTheLine()) {
+
+            /*  Simplified driving code.  For testing only
+            if (pressingForward) {
                 wheelPower = defaultWheelPower;
-            }
-            else if (pressingReverse && robotIsOnTheLine()) {
-                    wheelPower = -defaultWheelPower;
-                    prevDirectionForward = false;
-                }
-            else {
-                    wheelPower = 0;
-                }
-
-
-            if (!robotIsOnTheLine()) {    // special case to get it back on the line after it goes off.  Dangerous though.  Robot would drive forever until it finds red
-                if (prevDirectionForward) {
+            } else {
+                if (pressingReverse) {
                     wheelPower = -defaultWheelPower;
                 } else {
-                    wheelPower = defaultWheelPower;
+                    wheelPower = 0;
+                }
+            }
+            */
+
+            if (pressingForward && robotIsOnTheLine()) {
+                wheelPower = defaultWheelPower;
+                prevDirectionForward = true;
+                reachedEndOfTape = false;
+            } else {
+                if (pressingReverse && robotIsOnTheLine()) {
+                    wheelPower = -defaultWheelPower;
+                    prevDirectionForward = false;
+                    reachedEndOfTape = false;
+                } else {
+                    wheelPower = 0;
                 }
             }
 
-            double headingAdjustPower = 0;
-            double colorAdjustPower = 0;
-            if (wheelPower != 0) {
+            if (!robotIsOnTheLine() && !reachedEndOfTape) {    // special case to get it back on the line after it goes off.
+                signalEndOfTape();
+                reachedEndOfTape = true;  // this is so we only run this once
+                if (prevDirectionForward) {
+                    drive(-.2, 3);
+                } else {
+                    drive(.2, 3);
+                }
+            }
+
+            double headingAdjustPower = 0;  // default to zero
+            double colorAdjustPower = 0;    // default to zero
+
+            if (wheelPower != 0) {          // if driving, then do adjustments
                 colorAdjustPower = adjustForColor();
                 headingAdjustPower = headingAdjustment(currentHeading);
             }
@@ -129,15 +135,18 @@ public class SchoolofBlind extends LinearOpMode {
             fontRightPower = wheelPower + headingAdjustPower - colorAdjustPower;
             backRightPower = wheelPower + headingAdjustPower + colorAdjustPower;
 
-            robot.frontLeft.setPower(frontLeftPower);
-            robot.backLeft.setPower(backLeftPower);
-            robot.frontRight.setPower(fontRightPower);
-            robot.backRight.setPower(backRightPower);
+            Robot.frontLeft.setPower(frontLeftPower);
+            Robot.backLeft.setPower(backLeftPower);
+            Robot.frontRight.setPower(fontRightPower);
+            Robot.backRight.setPower(backRightPower);
 
             telemetry.addData("mid left", Robot.midLeft.red());
             telemetry.addData("mid right", Robot.midRight.red());
             telemetry.addData("outside left", Robot.outsideLeft.red());
             telemetry.addData("outside right", Robot.outsideRight.red());
+            telemetry.addData("wheelPower", wheelPower);
+            telemetry.addData("colorAdjustPower", colorAdjustPower);
+            telemetry.addData("headingAdjustPower", headingAdjustPower);
             telemetry.addData("currentHeading", currentHeading);
             telemetry.addData("actualHeading", actualHeading);
 
@@ -160,13 +169,13 @@ public class SchoolofBlind extends LinearOpMode {
         imu.initialize(parameters);
     }
 
-    public void getActualHeading(double targetHeading) {        // Also sets degreesOff and goRight
+    public void getActualHeading(double targetHeading) {        // Also sets degreesOff and goLeft
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         actualHeading = (360 + angles.firstAngle) % 360;        // This always gets you a number between 0 and 359.99
-        goRight = targetHeading > actualHeading;                // Simply, if it's a higher number, we want to go clockwise or right
+        goLeft = targetHeading > actualHeading;                // Simply, if it's a higher number, we want to go clockwise or right
         degreesOff = Math.abs(targetHeading - actualHeading);
         if (degreesOff > 180) {                                 // But if turning the other way is shorter, switch it
-            goRight = !goRight;
+            goLeft = !goLeft;
             degreesOff = 360 - degreesOff;
         }
     }
@@ -186,20 +195,20 @@ public class SchoolofBlind extends LinearOpMode {
         
         getActualHeading(targetHeading);
 
-        while (degreesOff > .3) {
+        while (degreesOff > .3 && opModeIsActive()) {
 
-            if (goRight) {
-                turnReverse = 1; // turn right
+            if (goLeft) {
+                turnReverse = 1; // turn left
             } else {
-                turnReverse = -1; // turn left
+                turnReverse = -1; // turn right
             }
 
             // think about using a calculation here for turnPower.
 
-            Robot.frontLeft.setPower(turnPower * turnReverse);
-            Robot.backLeft.setPower(turnPower * turnReverse);
-            Robot.frontRight.setPower(-turnPower * turnReverse);
-            Robot.backRight.setPower(-turnPower * turnReverse);
+            Robot.frontLeft.setPower(-turnPower * turnReverse);
+            Robot.backLeft.setPower(-turnPower * turnReverse);
+            Robot.frontRight.setPower(turnPower * turnReverse);
+            Robot.backRight.setPower(turnPower * turnReverse);
 
             getActualHeading(targetHeading);
 
@@ -216,7 +225,7 @@ public class SchoolofBlind extends LinearOpMode {
     public double headingAdjustment(double targetHeading) {
         double adjustment;
         double speedMinimum = 2;
-        double speedModifier = 7;
+        double speedModifier = 8;
         double graphShift = 0;
         double curvePower = 2;
 
@@ -228,8 +237,8 @@ public class SchoolofBlind extends LinearOpMode {
             adjustment = (Math.pow((degreesOff + graphShift) / speedModifier, curvePower) + speedMinimum) / 100;
         }
 
-        if (goRight) {
-            adjustment = -adjustment;
+        if (!goLeft) {
+            adjustment = -adjustment;  // positive values mean goLeft (i.e. heading is off target to the right), negative value is go right
         }
         return adjustment;
     }
@@ -239,25 +248,25 @@ public class SchoolofBlind extends LinearOpMode {
         double rightColor;
 
 
-        double redDivisor = 1000;
-
+        double redDivisor = 3000;
+        double maxRed = 250;
         double outputValue = 0;
 
         leftColor = Robot.midLeft.red();
         rightColor = Robot.midRight.red();
 
-        if (leftColor > Robot.redThreshold || rightColor > Robot.redThreshold) {
-            outputValue = (rightColor - leftColor) / redDivisor;
+        if (leftColor > maxRed && rightColor > maxRed) {  // if both are on the line close enough, do nothing
+            outputValue = 0;
+        } else {
+            if (leftColor > Robot.redThreshold || rightColor > Robot.redThreshold) {
+                outputValue = (rightColor - leftColor) / redDivisor;
+            }
         }
-        if (leftColor < Robot.redThreshold || rightColor < Robot.redThreshold) {
-            outputValue = (rightColor - leftColor) / redDivisor;
-        }
-
 
         return outputValue;
     }
     public boolean robotIsOnTheLine(){
-        if(Robot.midLeft.red() < Robot.onLineThreshold && Robot.midRight.red() < Robot.onLineThreshold){
+        if(Robot.midLeft.red() < Robot.redThreshold && Robot.midRight.red() < Robot.redThreshold){
             return false;
         }
         else {
@@ -265,9 +274,52 @@ public class SchoolofBlind extends LinearOpMode {
         }
     }
 
+    public boolean rightTurnAvailable() {
+        return Robot.outsideRight.red() >= 40;
+
+    }
+    public boolean leftTurnAvailable () {
+        return Robot.outsideLeft.red() >= 40;
+
+    }
+
+    public void signalRightTurn() {
+        telemetry.addLine("Right Turn Available");
+        Gamepad.RumbleEffect rumbleRight;
+        rumbleRight = new Gamepad.RumbleEffect.Builder()
+                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+
+                .build();
+        gamepad1.runRumbleEffect(rumbleRight);
+    }
+
+    public void signalLeftTurn() {
+        telemetry.addLine("Left Turn Available");
+        Gamepad.RumbleEffect rumbleLeft;
+        rumbleLeft = new Gamepad.RumbleEffect.Builder()
+                .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+
+                .build();
+        gamepad1.runRumbleEffect(rumbleLeft);
+    }
+
+    public void signalEndOfTape() {
+        telemetry.addLine("Right Turn Available");
+        Gamepad.RumbleEffect rumbleRight;
+        rumbleRight = new Gamepad.RumbleEffect.Builder()
+                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+
+                .build();
+        gamepad1.runRumbleEffect(rumbleRight);
+    }
 
     public void drive(double speed, double inches) {
+
         int ticksToMove = (int) (inches * Robot.ticksPerInch);
+        if (speed < 0) {
+            ticksToMove = ticksToMove * -1;
+        }
+
         int savePosition = Robot.frontLeft.getCurrentPosition();
         Robot.frontLeft.setTargetPosition(savePosition + ticksToMove);
         Robot.backLeft.setTargetPosition(Robot.backLeft.getCurrentPosition() + ticksToMove);
@@ -299,7 +351,4 @@ public class SchoolofBlind extends LinearOpMode {
         Robot.frontRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         Robot.backRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
     }
-
-
-
 }

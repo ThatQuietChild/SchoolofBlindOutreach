@@ -7,11 +7,16 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import org.firstinspires.ftc.teamcode.Robot;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 
 
 @TeleOp
@@ -67,38 +72,42 @@ public class SchoolofBlind extends LinearOpMode {
             double backRightPower;
 
             // right turn
-            if (pressingRightTurn && rightTurnAvailable()) {
+            if (pressingRightTurn && Robot.rightTurnAvailable()) {
                 currentHeading = turn(currentHeading, true);
+                drive(.25, 1);
             }
 
             // left turn
-            if (pressingLeftTurn && leftTurnAvailable()) {
+            if (pressingLeftTurn && Robot.leftTurnAvailable()) {
                 currentHeading = turn(currentHeading, false);
+                drive(.25, 1);
             }
 
             // signal right available
-            if (rightTurnAvailable()) {
-                signalRightTurn();
+            if (Robot.rightTurnAvailable()) {
+                Robot.signalRightTurn();
             }
 
             // signal left available
-            if (leftTurnAvailable()) {
-                signalLeftTurn();
+            if (Robot.leftTurnAvailable()) {
+                Robot.signalLeftTurn();
             }
             
             // Driving code
-            
+            if(pressingForward){
+                prevDirectionForward = true;
+            }
             if (pressingForward && robotIsOnTheLine()) {
                 wheelPower = defaultWheelPower;
-                prevDirectionForward = true;
-            } else {
-                if (pressingReverse && robotIsOnTheLine()) {
+            }
+            else if (pressingReverse && robotIsOnTheLine()) {
                     wheelPower = -defaultWheelPower;
                     prevDirectionForward = false;
-                } else {
+                }
+            else {
                     wheelPower = 0;
                 }
-            }
+
 
             if (!robotIsOnTheLine()) {    // special case to get it back on the line after it goes off.  Dangerous though.  Robot would drive forever until it finds red
                 if (prevDirectionForward) {
@@ -207,7 +216,7 @@ public class SchoolofBlind extends LinearOpMode {
     public double headingAdjustment(double targetHeading) {
         double adjustment;
         double speedMinimum = 2;
-        double speedModifier = 8;
+        double speedModifier = 7;
         double graphShift = 0;
         double curvePower = 2;
 
@@ -240,11 +249,15 @@ public class SchoolofBlind extends LinearOpMode {
         if (leftColor > Robot.redThreshold || rightColor > Robot.redThreshold) {
             outputValue = (rightColor - leftColor) / redDivisor;
         }
+        if (leftColor < Robot.redThreshold || rightColor < Robot.redThreshold) {
+            outputValue = (rightColor - leftColor) / redDivisor;
+        }
+
 
         return outputValue;
     }
     public boolean robotIsOnTheLine(){
-        if(Robot.midLeft.red() < Robot.redThreshold && Robot.midRight.red() < Robot.redThreshold){
+        if(Robot.midLeft.red() < Robot.onLineThreshold && Robot.midRight.red() < Robot.onLineThreshold){
             return false;
         }
         else {
@@ -252,32 +265,41 @@ public class SchoolofBlind extends LinearOpMode {
         }
     }
 
-    public boolean rightTurnAvailable() {
-        return Robot.outsideRight.red() >= 90;
 
+    public void drive(double speed, double inches) {
+        int ticksToMove = (int) (inches * Robot.ticksPerInch);
+        int savePosition = Robot.frontLeft.getCurrentPosition();
+        Robot.frontLeft.setTargetPosition(savePosition + ticksToMove);
+        Robot.backLeft.setTargetPosition(Robot.backLeft.getCurrentPosition() + ticksToMove);
+        Robot.frontRight.setTargetPosition(Robot.frontRight.getCurrentPosition() + ticksToMove);
+        Robot.backRight.setTargetPosition(Robot.backLeft.getCurrentPosition() + ticksToMove);
+
+        Robot.frontLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        Robot.frontRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        Robot.backRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+
+        Robot.frontLeft.setPower(speed);
+        Robot.backLeft.setPower(speed);
+        Robot.frontRight.setPower(speed);
+        Robot.backRight.setPower(speed);
+
+        while (Robot.frontLeft.isBusy() && opModeIsActive()) {
+            telemetry.addData("Inches driven", (Robot.frontLeft.getCurrentPosition() - savePosition) / Robot.ticksPerInch);
+            telemetry.update();
+        }
+
+        Robot.frontLeft.setPower(0);
+        Robot.backLeft.setPower(0);
+        Robot.frontRight.setPower(0);
+        Robot.backRight.setPower(0);
+
+        Robot.frontLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        Robot.frontRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        Robot.backRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
     }
-    public boolean leftTurnAvailable () {
-        return Robot.outsideLeft.red() >= 90;
 
-    }
 
-    public void signalRightTurn() {
-        telemetry.addLine("Right Turn Available");
-        Gamepad.RumbleEffect rumbleRight;
-        rumbleRight = new Gamepad.RumbleEffect.Builder()
-                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
 
-                .build();
-        gamepad1.runRumbleEffect(rumbleRight);
-    }
-
-    public void signalLeftTurn() {
-        telemetry.addLine("Left Turn Available");
-        Gamepad.RumbleEffect rumbleLeft;
-        rumbleLeft = new Gamepad.RumbleEffect.Builder()
-                .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
-
-                .build();
-        gamepad1.runRumbleEffect(rumbleLeft);
-    }
 }

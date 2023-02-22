@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -18,7 +19,7 @@ public class Robot {
     public static double wheelTicksPerRevolution = 383.6;  // for 13.7:1 gearboxes
     public static double wheelDiameter = 3.77;
     public static double ticksPerInch = (wheelTicksPerRevolution) / (wheelDiameter * Math.PI);
-
+    public static double speed = 0.2;
     // Color Sensing
     public static ColorSensor midLeft;
     public static ColorSensor midRight;
@@ -28,6 +29,10 @@ public class Robot {
 
     public static double redThreshold = 60;
 
+    public static Gamepad.RumbleEffect rumbleRight = new Gamepad.RumbleEffect.Builder()
+            .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+
+                .build();
 
     //Hardware Map
     public HardwareMap hardwareMap;

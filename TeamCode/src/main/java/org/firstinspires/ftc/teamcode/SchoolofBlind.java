@@ -7,15 +7,22 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
+import org.firstinspires.ftc.teamcode.Robot;
+
+
 
 @TeleOp(name = "Library of Blind")
 
 public class SchoolofBlind extends LinearOpMode {
+
+
+
 
     BNO055IMU imu;
     Orientation angles;
@@ -27,7 +34,7 @@ public class SchoolofBlind extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-
+        new Robot(hardwareMap);
         initIMU();
 
         waitForStart();

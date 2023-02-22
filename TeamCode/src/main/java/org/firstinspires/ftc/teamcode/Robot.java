@@ -19,7 +19,9 @@ public class Robot {
     public static double wheelTicksPerRevolution = 383.6;  // for 13.7:1 gearboxes
     public static double wheelDiameter = 3.77;
     public static double ticksPerInch = (wheelTicksPerRevolution) / (wheelDiameter * Math.PI);
-    public static double speed = 0.2;
+    public static double fullSpeed = 0.17;
+    public static double slowSpeed = 0.09;
+
     // Color Sensing
     public static ColorSensor midLeft;
     public static ColorSensor midRight;
@@ -31,8 +33,11 @@ public class Robot {
 
     public static Gamepad.RumbleEffect rumbleRight = new Gamepad.RumbleEffect.Builder()
             .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+            .build();
 
-                .build();
+    public static Gamepad.RumbleEffect rumbleLeft = new Gamepad.RumbleEffect.Builder()
+            .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+            .build();
 
     //Hardware Map
     public HardwareMap hardwareMap;

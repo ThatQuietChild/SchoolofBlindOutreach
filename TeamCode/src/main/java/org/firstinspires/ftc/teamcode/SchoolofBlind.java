@@ -74,37 +74,39 @@ public class SchoolofBlind extends LinearOpMode {
             // Get gamepad values
             // dpad up and down are forward and backward
             
-            boolean pressingForward = gamepad1.dpad_up;
-            boolean pressingReverse = gamepad1.dpad_down;
+            boolean pressingForward = gamepad1.left_stick_y < 0;
+            boolean pressingReverse = gamepad1.left_stick_y > 0;
+
+            defaultWheelPower = Robot.fullSpeed * -1 * gamepad1.left_stick_y;
             
             // dpad left and right are for turning 90 left/right
 
-            boolean pressingRightTurn = gamepad1.dpad_right;
-            boolean pressingLeftTurn = gamepad1.dpad_left;
+            boolean pressingRightTurn = gamepad1.b;
+            boolean pressingLeftTurn = gamepad1.x;
 
             // right turn
             if (pressingRightTurn) {
-                if (!rightTurnAvailable() && rightTurnTimer.seconds() < 3 && lastRTFrontLeftPos != 0) {
+                /* if (!rightTurnAvailable() && rightTurnTimer.seconds() < 3 && lastRTFrontLeftPos != 0) {
                     driveToPosition(lastRTFrontLeftPos, lastRTBackLeftPos, lastRTFrontRightPos, lastRTBackRightPos);
-                    sleep(2000);
                     currentHeading = turn(currentHeading, true);
-                } else {
+                } else { */
                     if (rightTurnAvailable()){
                         currentHeading = turn(currentHeading, true);
                     }
                 }
-            }
+
 
             // left turn
             if (pressingLeftTurn) {
-                if (!leftTurnAvailable() && leftTurnTimer.seconds() < 3 && lastLTFrontLeftPos != 0) {
+               /* if (!leftTurnAvailable() && leftTurnTimer.seconds() < 3 && lastLTFrontLeftPos != 0) {
                     driveToPosition(lastLTFrontLeftPos, lastLTBackLeftPos, lastLTFrontRightPos, lastLTBackRightPos);
-                    sleep(2000);
                     currentHeading = turn(currentHeading, false);
                 } else {
                     if (leftTurnAvailable()){
                         currentHeading = turn(currentHeading, false);
-                    }
+                    } */
+                if(leftTurnAvailable()){
+                    currentHeading = turn(currentHeading, false);
                 }
             }
 
@@ -358,22 +360,19 @@ public class SchoolofBlind extends LinearOpMode {
 
     public void signalRightTurn() {
         telemetry.addLine("Right Turn Available");
-        gamepad1.runRumbleEffect(Robot.rumbleRight);
+        // gamepad1.runRumbleEffect(Robot.rumbleRight);
+        telemetry.addLine("Right Turn");
     }
 
     public void signalLeftTurn() {
         telemetry.addLine("Left Turn Available");
-        gamepad1.runRumbleEffect(Robot.rumbleLeft);
+        // gamepad1.runRumbleEffect(Robot.rumbleLeft);
+        telemetry.addLine("Left Turn");
     }
 
     public void signalEndOfTape() {
         telemetry.addLine("Right Turn Available");
-        Gamepad.RumbleEffect rumbleRight;
-        rumbleRight = new Gamepad.RumbleEffect.Builder()
-                .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
-
-                .build();
-        gamepad1.runRumbleEffect(rumbleRight);
+        // gamepad1.runRumbleEffect(Robot.rumbleRight);
     }
 
     public void driveToPosition(int frontLeftPos, int backLeftPos, int frontRightPos, int backRightPos) {
@@ -459,10 +458,9 @@ public class SchoolofBlind extends LinearOpMode {
         double currentPos = (Robot.frontLeft.getCurrentPosition()+ Robot.backLeft.getCurrentPosition() + Robot.frontRight.getCurrentPosition() + Robot.backRight.getCurrentPosition())/Robot.ticksPerInch;
         return currentPos;
     }
-    public void playLeft(){
+     public void playLeft(){
         int leftTurnID   = hardwareMap.appContext.getResources().getIdentifier("leftturn",   "raw", hardwareMap.appContext.getPackageName());
-        SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, leftTurnID);
-
+       // SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, leftTurnID);
     }
 
 }

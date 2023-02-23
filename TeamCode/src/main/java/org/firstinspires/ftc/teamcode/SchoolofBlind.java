@@ -247,6 +247,8 @@ public class SchoolofBlind extends LinearOpMode {
         double turnPower = .25;
         double turnReverse;
         double targetHeading;
+        ElapsedTime turnTimer = new ElapsedTime();
+        turnTimer.reset();
 
         if (turnRight) {
             targetHeading = prevHeading - 90;
@@ -257,7 +259,11 @@ public class SchoolofBlind extends LinearOpMode {
         
         getActualHeading(targetHeading);
 
-        while (degreesOff > .3 && opModeIsActive()) {
+        double savePrevTime = turnTimer.milliseconds();
+        double savePrevDegrees = actualHeading;
+        double degreesPerSecond = 0;
+
+        while (degreesOff > .3 || degreesPerSecond > 4 && opModeIsActive()) {
 
             if (goLeft) {
                 turnReverse = 1; // turn left
@@ -266,6 +272,9 @@ public class SchoolofBlind extends LinearOpMode {
             }
 
             // think about using a calculation here for turnPower.
+            if (degreesOff < 5) {
+                turnPower = .10;
+            }
 
             Robot.frontLeft.setPower(-turnPower * turnReverse);
             Robot.backLeft.setPower(-turnPower * turnReverse);
@@ -273,7 +282,9 @@ public class SchoolofBlind extends LinearOpMode {
             Robot.backRight.setPower(turnPower * turnReverse);
 
             getActualHeading(targetHeading);
-
+            degreesPerSecond = Math.abs(actualHeading - savePrevDegrees) / (turnTimer.milliseconds() - savePrevTime) / 1000;
+            savePrevTime = turnTimer.milliseconds();
+            savePrevDegrees = actualHeading;
         }
 
         Robot.frontLeft.setPower(0);

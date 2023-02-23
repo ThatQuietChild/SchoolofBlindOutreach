@@ -29,7 +29,7 @@ public class Robot {
     public static ColorSensor outsideLeft;
     public static ColorSensor outsideRight;
 
-    public static double redThreshold = 60;
+    public static double redThreshold = 75;
 
     public static Gamepad.RumbleEffect rumbleRight = new Gamepad.RumbleEffect.Builder()
             .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.ftccommon.SoundPlayer;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -29,20 +30,20 @@ public class SchoolofBlind extends LinearOpMode {
     Orientation angles;
 
     // global variables for getActualHeading.  Do not define anywhere else
-    double actualHeading = 0;
-    boolean goLeft;
-    double degreesOff;
+   public double actualHeading = 0;
+    public boolean goLeft;
+    public double degreesOff;
 
     // Last wheel positions when right turn was available
-    int lastRTFrontLeftPos = 0;
-    int lastRTBackLeftPos = 0;
-    int lastRTFrontRightPos = 0;
-    int lastRTBackRightPos = 0;
+    public int lastRTFrontLeftPos = 0;
+    public int lastRTBackLeftPos = 0;
+    public int lastRTFrontRightPos = 0;
+    public int lastRTBackRightPos = 0;
     // Last wheel positions when left turn was available
-    int lastLTFrontLeftPos = 0;
-    int lastLTBackLeftPos = 0;
-    int lastLTFrontRightPos = 0;
-    int lastLTBackRightPos = 0;
+    public int lastLTFrontLeftPos = 0;
+    public int lastLTBackLeftPos = 0;
+    public int lastLTFrontRightPos = 0;
+    public int lastLTBackRightPos = 0;
 
     @Override
     public void runOpMode() {
@@ -83,8 +84,9 @@ public class SchoolofBlind extends LinearOpMode {
 
             // right turn
             if (pressingRightTurn) {
-                if (!rightTurnAvailable() && rightTurnTimer.seconds() < 3) {
+                if (!rightTurnAvailable() && rightTurnTimer.seconds() < 3 && lastRTFrontLeftPos != 0) {
                     driveToPosition(lastRTFrontLeftPos, lastRTBackLeftPos, lastRTFrontRightPos, lastRTBackRightPos);
+                    sleep(2000);
                     currentHeading = turn(currentHeading, true);
                 } else {
                     if (rightTurnAvailable()){
@@ -95,8 +97,9 @@ public class SchoolofBlind extends LinearOpMode {
 
             // left turn
             if (pressingLeftTurn) {
-                if (!leftTurnAvailable() && leftTurnTimer.seconds() < 3) {
+                if (!leftTurnAvailable() && leftTurnTimer.seconds() < 3 && lastLTFrontLeftPos != 0) {
                     driveToPosition(lastLTFrontLeftPos, lastLTBackLeftPos, lastLTFrontRightPos, lastLTBackRightPos);
+                    sleep(2000);
                     currentHeading = turn(currentHeading, false);
                 } else {
                     if (leftTurnAvailable()){
@@ -107,15 +110,24 @@ public class SchoolofBlind extends LinearOpMode {
 
             // signal right available
             if (rightTurnAvailable()) {
+                lastRTFrontLeftPos = Robot.frontLeft.getCurrentPosition();
+                lastRTBackLeftPos = Robot.backLeft.getCurrentPosition();
+                lastRTFrontRightPos = Robot.frontRight.getCurrentPosition();
+                lastRTBackRightPos = Robot.backRight.getCurrentPosition();
                 signalRightTurn();
                 slowTimer.reset();
                 rightTurnTimer.reset();
             }
             // signal left available
             if (leftTurnAvailable()) {
+                lastLTFrontLeftPos = Robot.frontLeft.getCurrentPosition();
+                lastLTBackLeftPos = Robot.backLeft.getCurrentPosition();
+                lastLTFrontRightPos = Robot.frontRight.getCurrentPosition();
+                lastLTBackRightPos = Robot.backRight.getCurrentPosition();
                 signalLeftTurn();  // might need to put a timer in this and only signal every second
                 slowTimer.reset();
                 leftTurnTimer.reset();
+                playLeft();
             }
 
 
@@ -124,9 +136,9 @@ public class SchoolofBlind extends LinearOpMode {
             if (slowTimer.seconds() > 3) {
                 defaultWheelPower = Robot.fullSpeed;
             }
-            /**else {
+            /* else {
             defaultWheelPower = Robot.slowSpeed;
-            } **/
+            } */
 
             /*  Simplified driving code.  For testing only
             if (pressingForward) {
@@ -195,6 +207,9 @@ public class SchoolofBlind extends LinearOpMode {
             telemetry.addData("mid right blue", Robot.midRight.blue());
             telemetry.addData("outside left blue", Robot.outsideLeft.blue());
             telemetry.addData("mid left blue", Robot.midLeft.blue());
+            telemetry.addData("Last front left left turn pos", lastLTFrontLeftPos);
+            telemetry.addData("Last front left right turn pos", lastLTFrontLeftPos);
+
 
 
             telemetry.update();
@@ -321,18 +336,12 @@ public class SchoolofBlind extends LinearOpMode {
     }
 
     public boolean rightTurnAvailable() {
-        lastRTFrontLeftPos = Robot.frontLeft.getCurrentPosition();
-        lastRTBackLeftPos = Robot.backLeft.getCurrentPosition();
-        lastRTFrontRightPos = Robot.frontRight.getCurrentPosition();
-        lastRTBackRightPos = Robot.backLeft.getCurrentPosition();
+
         return Robot.outsideRight.red() >= 40;
     }
 
     public boolean leftTurnAvailable () {
-        lastLTFrontLeftPos = Robot.frontLeft.getCurrentPosition();
-        lastLTBackLeftPos = Robot.backLeft.getCurrentPosition();
-        lastLTFrontRightPos = Robot.frontRight.getCurrentPosition();
-        lastLTBackRightPos = Robot.backLeft.getCurrentPosition();
+
         return Robot.outsideLeft.red() >= 40;
     }
 
@@ -357,6 +366,7 @@ public class SchoolofBlind extends LinearOpMode {
     }
 
     public void driveToPosition(int frontLeftPos, int backLeftPos, int frontRightPos, int backRightPos) {
+
         Robot.frontLeft.setTargetPosition(frontLeftPos);
         Robot.backLeft.setTargetPosition(backLeftPos);
         Robot.frontRight.setTargetPosition(frontRightPos);
@@ -366,11 +376,18 @@ public class SchoolofBlind extends LinearOpMode {
         Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         Robot.frontRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         Robot.backRight.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+        double multiplier = 1;
+        if (frontLeftPos < Robot.frontLeft.getCurrentPosition()){
+            multiplier = -1;
+        }
+        else{
+            multiplier = 1;
+        }
+        Robot.frontLeft.setPower(Robot.fullSpeed * multiplier);
+        Robot.backLeft.setPower(Robot.fullSpeed * multiplier);
+        Robot.frontRight.setPower(Robot.fullSpeed * multiplier);
+        Robot.backRight.setPower(Robot.fullSpeed * multiplier);
 
-        Robot.frontLeft.setPower(Robot.fullSpeed);
-        Robot.backLeft.setPower(Robot.fullSpeed);
-        Robot.frontRight.setPower(Robot.fullSpeed);
-        Robot.backRight.setPower(Robot.fullSpeed);
 
         while (Robot.frontLeft.isBusy() && opModeIsActive()) {
             telemetry.addData("Inches driven", (Robot.frontLeft.getCurrentPosition()) / Robot.ticksPerInch);
@@ -431,4 +448,10 @@ public class SchoolofBlind extends LinearOpMode {
         double currentPos = (Robot.frontLeft.getCurrentPosition()+ Robot.backLeft.getCurrentPosition() + Robot.frontRight.getCurrentPosition() + Robot.backRight.getCurrentPosition())/Robot.ticksPerInch;
         return currentPos;
     }
+    public void playLeft(){
+        int leftTurnID   = hardwareMap.appContext.getResources().getIdentifier("leftturn",   "raw", hardwareMap.appContext.getPackageName());
+        SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, leftTurnID);
+
+    }
+
 }

@@ -17,8 +17,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 import org.firstinspires.ftc.teamcode.Robot;
 
-
-
 @TeleOp(name = "Library of Blind")
 
 public class SchoolofBlind extends LinearOpMode {
@@ -32,17 +30,10 @@ public class SchoolofBlind extends LinearOpMode {
     public double degreesOff;
     public double currentHeading = 0;
 
-    public int leftTurnID = hardwareMap.appContext.getResources().getIdentifier("leftturn", "raw", hardwareMap.appContext.getPackageName());
-    public int rightTurnID   = hardwareMap.appContext.getResources().getIdentifier("rightturn",   "raw", hardwareMap.appContext.getPackageName());
-    public int northID   = hardwareMap.appContext.getResources().getIdentifier("north",   "raw", hardwareMap.appContext.getPackageName());
-    public int westID   = hardwareMap.appContext.getResources().getIdentifier("west",   "raw", hardwareMap.appContext.getPackageName());
-    public int southID   = hardwareMap.appContext.getResources().getIdentifier("south",   "raw", hardwareMap.appContext.getPackageName());
-    public int eastID   = hardwareMap.appContext.getResources().getIdentifier("east",   "raw", hardwareMap.appContext.getPackageName());
-    public int treasureID   = hardwareMap.appContext.getResources().getIdentifier("treasure",   "raw", hardwareMap.appContext.getPackageName());
-
     ElapsedTime gameTimer = new ElapsedTime();
     public double prevLTSignalTime = 0;
     public double prevRTSignalTIme = 0;
+    public double prevTreasureSignalTIme = 0;
     public double prevSignalHeading = -1;
 
     @Override
@@ -191,6 +182,11 @@ public class SchoolofBlind extends LinearOpMode {
 
     public double turn(double prevHeading, boolean turnRight) {  // Only options are to turn right +90 or left -90
 
+        int northID   = hardwareMap.appContext.getResources().getIdentifier("north",   "raw", hardwareMap.appContext.getPackageName());
+        int westID   = hardwareMap.appContext.getResources().getIdentifier("west",   "raw", hardwareMap.appContext.getPackageName());
+        int southID   = hardwareMap.appContext.getResources().getIdentifier("south",   "raw", hardwareMap.appContext.getPackageName());
+        int eastID   = hardwareMap.appContext.getResources().getIdentifier("east",   "raw", hardwareMap.appContext.getPackageName());
+
         double turnPower = .25;
         double turnReverse;
         double targetHeading;
@@ -313,9 +309,10 @@ public class SchoolofBlind extends LinearOpMode {
     }
 
     public void signalRightTurn() {
+        int rightTurnID   = hardwareMap.appContext.getResources().getIdentifier("rightturn",   "raw", hardwareMap.appContext.getPackageName());
         telemetry.addLine("Right Turn Available");
-        if ((gameTimer.seconds() - prevLTSignalTime) > 2 || prevSignalHeading != currentHeading) {  // only signal if 2 seconds has passed or we have turned
-            //SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, rightTurnID);
+        if ((gameTimer.seconds() - prevLTSignalTime) > 4 || prevSignalHeading != currentHeading) {  // only signal if 2 seconds has passed or we have turned
+            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, rightTurnID);
             gamepad1.runRumbleEffect(Robot.rumbleRight);
             prevLTSignalTime = gameTimer.seconds();
             prevSignalHeading = currentHeading;
@@ -323,12 +320,23 @@ public class SchoolofBlind extends LinearOpMode {
     }
 
     public void signalLeftTurn() {
+        int leftTurnID = hardwareMap.appContext.getResources().getIdentifier("leftturn", "raw", hardwareMap.appContext.getPackageName());
         telemetry.addLine("Left Turn Available");
-        if ((gameTimer.seconds() - prevRTSignalTIme) > 2 || prevSignalHeading != currentHeading) {  // only signal if 2 seconds has passed or we have turned
-            //SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, leftTurnID);
+        if ((gameTimer.seconds() - prevRTSignalTIme) > 4 || prevSignalHeading != currentHeading) {  // only signal if 2 seconds has passed or we have turned
+            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, leftTurnID);
             gamepad1.runRumbleEffect(Robot.rumbleLeft);
             prevLTSignalTime = gameTimer.seconds();
             prevSignalHeading = currentHeading;
+        }
+    }
+
+    public void signalTreasure() {
+        int treasureID   = hardwareMap.appContext.getResources().getIdentifier("treasure",   "raw", hardwareMap.appContext.getPackageName());
+        telemetry.addLine("Treasure!!!!!!!");
+        if ((gameTimer.seconds() - prevTreasureSignalTIme) > 2) {  // only signal if 2 seconds has passed or we have turned
+            SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, treasureID);
+            //gamepad1.runRumbleEffect(Robot.rumbleLeft);
+            prevTreasureSignalTIme = gameTimer.seconds();
         }
     }
 

@@ -123,9 +123,10 @@ public class SchoolofBlind extends LinearOpMode {
 
             if (slowTimer.seconds() > 3) {
                 defaultWheelPower = Robot.fullSpeed;
-            } else {
-                defaultWheelPower = Robot.slowSpeed;
             }
+            /**else {
+            defaultWheelPower = Robot.slowSpeed;
+            } **/
 
             /*  Simplified driving code.  For testing only
             if (pressingForward) {
@@ -190,6 +191,11 @@ public class SchoolofBlind extends LinearOpMode {
             telemetry.addData("headingAdjustPower", headingAdjustPower);
             telemetry.addData("currentHeading", currentHeading);
             telemetry.addData("actualHeading", actualHeading);
+            telemetry.addData("outside right blue", Robot.outsideRight.blue());
+            telemetry.addData("mid right blue", Robot.midRight.blue());
+            telemetry.addData("outside left blue", Robot.outsideLeft.blue());
+            telemetry.addData("mid left blue", Robot.midLeft.blue());
+
 
             telemetry.update();
         }
@@ -393,7 +399,7 @@ public class SchoolofBlind extends LinearOpMode {
         Robot.frontLeft.setTargetPosition(savePosition + ticksToMove);
         Robot.backLeft.setTargetPosition(Robot.backLeft.getCurrentPosition() + ticksToMove);
         Robot.frontRight.setTargetPosition(Robot.frontRight.getCurrentPosition() + ticksToMove);
-        Robot.backRight.setTargetPosition(Robot.backLeft.getCurrentPosition() + ticksToMove);
+        Robot.backRight.setTargetPosition(Robot.backRight.getCurrentPosition() + ticksToMove);
 
         Robot.frontLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);

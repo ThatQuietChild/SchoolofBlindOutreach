@@ -311,7 +311,7 @@ public class SchoolofBlind extends LinearOpMode {
     public void signalRightTurn() {
         int rightTurnID   = hardwareMap.appContext.getResources().getIdentifier("rightturn",   "raw", hardwareMap.appContext.getPackageName());
         telemetry.addLine("Right Turn Available");
-        if ((gameTimer.seconds() - prevLTSignalTime) > 4 || prevSignalHeading != currentHeading) {  // only signal if 2 seconds has passed or we have turned
+        if ((gameTimer.seconds() - prevLTSignalTime) > 4 /*|| prevSignalHeading != currentHeading*/) {  // only signal if 2 seconds has passed or we have turned
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, rightTurnID);
             gamepad1.runRumbleEffect(Robot.rumbleRight);
             prevLTSignalTime = gameTimer.seconds();
@@ -322,7 +322,7 @@ public class SchoolofBlind extends LinearOpMode {
     public void signalLeftTurn() {
         int leftTurnID = hardwareMap.appContext.getResources().getIdentifier("leftturn", "raw", hardwareMap.appContext.getPackageName());
         telemetry.addLine("Left Turn Available");
-        if ((gameTimer.seconds() - prevRTSignalTIme) > 4 || prevSignalHeading != currentHeading) {  // only signal if 2 seconds has passed or we have turned
+        if ((gameTimer.seconds() - prevRTSignalTIme) > 4 /*|| prevSignalHeading != currentHeading*/) {  // only signal if 2 seconds has passed or we have turned
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, leftTurnID);
             gamepad1.runRumbleEffect(Robot.rumbleLeft);
             prevLTSignalTime = gameTimer.seconds();

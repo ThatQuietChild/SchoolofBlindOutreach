@@ -265,7 +265,7 @@ public class SchoolofBlind extends LinearOpMode {
         double savePrevDegrees = actualHeading;
         double degreesPerSecond = 0;
 
-        while (degreesOff > .3 || degreesPerSecond > 4 && opModeIsActive()) {
+        while (degreesOff > .3 || degreesPerSecond > 2 && opModeIsActive()) {
 
             if (goLeft) {
                 turnReverse = 1; // turn left
@@ -274,7 +274,7 @@ public class SchoolofBlind extends LinearOpMode {
             }
 
             // think about using a calculation here for turnPower.
-            if (degreesOff < 5) {
+            if (degreesOff < 10) {
                 turnPower = .10;
             }
 

@@ -32,11 +32,17 @@ public class Robot {
     public static double redThreshold = 75;
 
     public static Gamepad.RumbleEffect rumbleRight = new Gamepad.RumbleEffect.Builder()
-            .addStep(0.0, 1.0, 500)  //  Rumble right motor 100% for 500 mSec
+            .addStep(0.0, 1.0, 100)  //  Rumble right motor 100% for 500 mSec
+            .addStep(0.0, 0, 50)  //  Rumble right motor 100% for 500 mSec
+            .addStep(0.0, 1.0, 100)  //  Rumble right motor 100% for 500 mSec
+            .addStep(0.0, 0, 50)  //  Rumble right motor 100% for 500 mSec
+            .addStep(0.0, 1.0, 100)  //  Rumble right motor 100% for 500 mSec
             .build();
 
     public static Gamepad.RumbleEffect rumbleLeft = new Gamepad.RumbleEffect.Builder()
-            .addStep(1.0, 0.0, 500)  //  Rumble left motor 100% for 500 mSec
+            .addStep(1.0, 0.0, 150)  //  Rumble left motor 100% for 500 mSec
+            .addStep(0, 0.0, 50)  //  Rumble left motor 100% for 500 mSec
+            .addStep(1.0, 0.0, 150)  //  Rumble left motor 100% for 500 mSec
             .build();
 
     //Hardware Map

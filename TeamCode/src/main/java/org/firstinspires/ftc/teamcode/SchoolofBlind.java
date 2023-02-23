@@ -33,6 +33,17 @@ public class SchoolofBlind extends LinearOpMode {
     boolean goLeft;
     double degreesOff;
 
+    // Last wheel positions when right turn was available
+    int lastRTFrontLeftPos = 0;
+    int lastRTBackLeftPos = 0;
+    int lastRTFrontRightPos = 0;
+    int lastRTBackRightPos = 0;
+    // Last wheel positions when left turn was available
+    int lastLTFrontLeftPos = 0;
+    int lastLTBackLeftPos = 0;
+    int lastLTFrontRightPos = 0;
+    int lastLTBackRightPos = 0;
+
     @Override
     public void runOpMode() {
         new Robot(hardwareMap);
@@ -52,6 +63,10 @@ public class SchoolofBlind extends LinearOpMode {
 
         ElapsedTime slowTimer = new ElapsedTime();
         slowTimer.reset();
+        ElapsedTime rightTurnTimer = new ElapsedTime();
+        rightTurnTimer.reset();
+        ElapsedTime leftTurnTimer = new ElapsedTime();
+        leftTurnTimer.reset();
 
         while (opModeIsActive()) {
 
@@ -67,24 +82,40 @@ public class SchoolofBlind extends LinearOpMode {
             boolean pressingLeftTurn = gamepad1.dpad_left;
 
             // right turn
-            if (pressingRightTurn && rightTurnAvailable()) {
-                currentHeading = turn(currentHeading, true);
+            if (pressingRightTurn) {
+                if (!rightTurnAvailable() && rightTurnTimer.seconds() < 3) {
+                    driveToPosition(lastRTFrontLeftPos, lastRTBackLeftPos, lastRTFrontRightPos, lastRTBackRightPos);
+                    currentHeading = turn(currentHeading, true);
+                } else {
+                    if (rightTurnAvailable()){
+                        currentHeading = turn(currentHeading, true);
+                    }
+                }
             }
 
             // left turn
-            if (pressingLeftTurn && leftTurnAvailable()) {
-                currentHeading = turn(currentHeading, false);
+            if (pressingLeftTurn) {
+                if (!leftTurnAvailable() && leftTurnTimer.seconds() < 3) {
+                    driveToPosition(lastLTFrontLeftPos, lastLTBackLeftPos, lastLTFrontRightPos, lastLTBackRightPos);
+                    currentHeading = turn(currentHeading, false);
+                } else {
+                    if (leftTurnAvailable()){
+                        currentHeading = turn(currentHeading, false);
+                    }
+                }
             }
 
             // signal right available
             if (rightTurnAvailable()) {
                 signalRightTurn();
                 slowTimer.reset();
+                rightTurnTimer.reset();
             }
             // signal left available
             if (leftTurnAvailable()) {
                 signalLeftTurn();  // might need to put a timer in this and only signal every second
                 slowTimer.reset();
+                leftTurnTimer.reset();
             }
 
 
@@ -257,7 +288,6 @@ public class SchoolofBlind extends LinearOpMode {
         double leftColor;
         double rightColor;
 
-
         double redDivisor = 5000;
         double maxRed = 250;
         double outputValue = 0;
@@ -285,9 +315,18 @@ public class SchoolofBlind extends LinearOpMode {
     }
 
     public boolean rightTurnAvailable() {
+        lastRTFrontLeftPos = Robot.frontLeft.getCurrentPosition();
+        lastRTBackLeftPos = Robot.backLeft.getCurrentPosition();
+        lastRTFrontRightPos = Robot.frontRight.getCurrentPosition();
+        lastRTBackRightPos = Robot.backLeft.getCurrentPosition();
         return Robot.outsideRight.red() >= 40;
     }
+
     public boolean leftTurnAvailable () {
+        lastLTFrontLeftPos = Robot.frontLeft.getCurrentPosition();
+        lastLTBackLeftPos = Robot.backLeft.getCurrentPosition();
+        lastLTFrontRightPos = Robot.frontRight.getCurrentPosition();
+        lastLTBackRightPos = Robot.backLeft.getCurrentPosition();
         return Robot.outsideLeft.red() >= 40;
     }
 
@@ -311,11 +350,11 @@ public class SchoolofBlind extends LinearOpMode {
         gamepad1.runRumbleEffect(rumbleRight);
     }
 
-    public void driveBack() {
-        Robot.frontLeft.setTargetPosition(Robot.frontLeft.getCurrentPosition());
-        Robot.backLeft.setTargetPosition(Robot.backLeft.getCurrentPosition());
-        Robot.frontRight.setTargetPosition(Robot.frontRight.getCurrentPosition());
-        Robot.backRight.setTargetPosition(Robot.backLeft.getCurrentPosition());
+    public void driveToPosition(int frontLeftPos, int backLeftPos, int frontRightPos, int backRightPos) {
+        Robot.frontLeft.setTargetPosition(frontLeftPos);
+        Robot.backLeft.setTargetPosition(backLeftPos);
+        Robot.frontRight.setTargetPosition(frontRightPos);
+        Robot.backRight.setTargetPosition(backRightPos);
 
         Robot.frontLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
@@ -328,7 +367,6 @@ public class SchoolofBlind extends LinearOpMode {
         Robot.backRight.setPower(Robot.fullSpeed);
 
         while (Robot.frontLeft.isBusy() && opModeIsActive()) {
-            gamepad1.runRumbleEffect(Robot.rumbleRight);
             telemetry.addData("Inches driven", (Robot.frontLeft.getCurrentPosition()) / Robot.ticksPerInch);
             telemetry.update();
         }
@@ -342,11 +380,7 @@ public class SchoolofBlind extends LinearOpMode {
         Robot.backLeft.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         Robot.frontRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         Robot.backRight.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-
-        sleep(1000);
     }
-
-
 
     public void drive(double speed, double inches) {
 

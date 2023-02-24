@@ -34,6 +34,7 @@ public class SchoolofBlind extends LinearOpMode {
     public double prevLTSignalTime = 0;
     public double prevRTSignalTIme = 0;
     public double prevTreasureSignalTIme = 0;
+    public double prevWinSignalTime = 0;
     public double prevSignalHeading = -1;
 
     @Override
@@ -94,6 +95,10 @@ public class SchoolofBlind extends LinearOpMode {
                 signalLeftTurn();  // might need to put a timer in this and only signal every second
             }
 
+            // signal treasure
+            if(Robot.midLeft.blue()>= 150 || Robot.midRight.blue() >= 150){
+              signalTreasure();
+            }
 
             // Driving code
 
@@ -115,9 +120,9 @@ public class SchoolofBlind extends LinearOpMode {
                 signalEndOfTape();
                 reachedEndOfTape = true;  // this is so we only run this once
                 if (prevDirectionForward) {
-                    drive(-Robot.fullSpeed, 4);
+                    drive(-Robot.fullSpeed, 5);
                 } else {
-                    drive(Robot.fullSpeed, 4);
+                    drive(Robot.fullSpeed, 5);
                 }
             }
 
@@ -148,11 +153,16 @@ public class SchoolofBlind extends LinearOpMode {
             telemetry.addData("headingAdjustPower", headingAdjustPower);
             telemetry.addData("currentHeading", currentHeading);
             telemetry.addData("actualHeading", actualHeading);
-            telemetry.addData("outside right blue", Robot.outsideRight.blue());
+            telemetry.addData("mid right blue", Robot.midRight.blue());
+            telemetry.addData("mid left blue", Robot.midLeft.blue());
             telemetry.addData("outside left blue", Robot.outsideLeft.blue());
+            telemetry.addData("outside right blue", Robot.outsideRight.blue());
             telemetry.update();
         }
     }
+
+
+
     public void initIMU() {
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
         parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
@@ -311,10 +321,10 @@ public class SchoolofBlind extends LinearOpMode {
     public void signalRightTurn() {
         int rightTurnID   = hardwareMap.appContext.getResources().getIdentifier("rightturn",   "raw", hardwareMap.appContext.getPackageName());
         telemetry.addLine("Right Turn Available");
-        if ((gameTimer.seconds() - prevLTSignalTime) > 4 /*|| prevSignalHeading != currentHeading*/) {  // only signal if 2 seconds has passed or we have turned
+        if ((gameTimer.seconds() - prevRTSignalTIme) > 2 /*|| prevSignalHeading != currentHeading*/) {  // only signal if 2 seconds has passed or we have turned
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, rightTurnID);
             gamepad1.runRumbleEffect(Robot.rumbleRight);
-            prevLTSignalTime = gameTimer.seconds();
+            prevRTSignalTIme = gameTimer.seconds();
             prevSignalHeading = currentHeading;
         }
     }
@@ -322,7 +332,7 @@ public class SchoolofBlind extends LinearOpMode {
     public void signalLeftTurn() {
         int leftTurnID = hardwareMap.appContext.getResources().getIdentifier("leftturn", "raw", hardwareMap.appContext.getPackageName());
         telemetry.addLine("Left Turn Available");
-        if ((gameTimer.seconds() - prevRTSignalTIme) > 4 /*|| prevSignalHeading != currentHeading*/) {  // only signal if 2 seconds has passed or we have turned
+        if ((gameTimer.seconds() - prevLTSignalTime) > 2 /*|| prevSignalHeading != currentHeading*/) {  // only signal if 2 seconds has passed or we have turned
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, leftTurnID);
             gamepad1.runRumbleEffect(Robot.rumbleLeft);
             prevLTSignalTime = gameTimer.seconds();
@@ -337,6 +347,15 @@ public class SchoolofBlind extends LinearOpMode {
             SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, treasureID);
             //gamepad1.runRumbleEffect(Robot.rumbleLeft);
             prevTreasureSignalTIme = gameTimer.seconds();
+        }
+        if(Robot.outsideRight.blue() >= 60 || Robot.outsideLeft.blue() >= 60){
+            int winID   = hardwareMap.appContext.getResources().getIdentifier("win",   "raw", hardwareMap.appContext.getPackageName());
+            telemetry.addLine("You win!");
+            if ((gameTimer.seconds() - prevWinSignalTime) > 2) {  // only signal if 2 seconds has passed or we have turned
+                SoundPlayer.getInstance().startPlaying(hardwareMap.appContext, winID);
+                //gamepad1.runRumbleEffect(Robot.rumbleLeft);
+                prevWinSignalTime = gameTimer.seconds();
+            }
         }
     }
 

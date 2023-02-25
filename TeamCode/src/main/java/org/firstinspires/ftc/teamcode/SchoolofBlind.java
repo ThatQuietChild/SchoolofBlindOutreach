@@ -205,8 +205,10 @@ public class SchoolofBlind extends LinearOpMode {
 
         if (turnRight) {
             targetHeading = prevHeading - 90;
+            prevRTSignalTIme = gameTimer.seconds() + 5;  // prevents another right turn signal for 5 seconds
         } else {
             targetHeading = prevHeading + 90;
+            prevLTSignalTime = gameTimer.seconds() + 5;  // prevents another left turn signal for 5 seconds
         }
         targetHeading = (360 + targetHeading) % 360;
         
